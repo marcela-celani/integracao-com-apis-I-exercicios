@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState , useEffect } from 'react'
 import { Botao, ContainerInputs, ContainerMusicas, InputMusica, Musica } from './styled'
+import axios from 'axios'
 
 const musicasLocal = [{
     artist: "Artista 1",
@@ -21,7 +22,80 @@ const musicasLocal = [{
 }]
 
 export default function Musicas(props) {
-    const [musicas, setMusicas] = useState(musicasLocal)
+    const [musicas, setMusicas] = useState([])
+    const [name, setName] = useState('')
+    const [artist, setArtist] = useState('')
+    const [url, setUrl] = useState('')
+
+    useEffect(() => {
+        getPlaylistTracks(props.playlist.id)
+    },[props.playlist.id])
+
+    const getPlaylistTracks = (playlistId) => {
+
+        const headers = {
+            headers: {
+                Authorization: 'marcela-celani-easley'
+            }
+        }
+
+        axios.get(`https://us-central1-labenu-apis.cloudfunctions.net/labefy/playlists/${playlistId}/tracks`, headers)
+        .then((resp) => {
+            setMusicas(resp.data.result.tracks)
+            console.log('sucesso musicas', resp.data);
+          })
+          .catch((error) => {
+            console.log(error.response.data);
+        })
+    }
+
+    const addTrackToPlaylist = (playlistId) => {
+        
+        const headers = {
+            headers: {
+                Authorization: 'marcela-celani-easley'
+            }
+        }
+
+        const body = {
+            name, 
+            artist,
+            url
+        }
+
+        axios.post(`https://us-central1-labenu-apis.cloudfunctions.net/labefy/playlists/${playlistId}/tracks`, body, headers)
+        .then(() => { 
+            setName('')
+            setArtist('')
+            setUrl('')
+            console.log('adicionou musicas')
+            getPlaylistTracks(props.playlist.id)
+          })
+          .catch((error) => {
+            alert(error.response.data.message);
+        })
+
+    }
+
+    const removeTrackFromPlaylist = (trackId) => {
+        const headers = {
+            headers: {
+                Authorization: 'marcela-celani-easley'
+            }
+        }
+
+        axios.delete(`https://us-central1-labenu-apis.cloudfunctions.net/labefy/playlists/${props.playlist.id}/tracks/${trackId}`, headers)
+        .then((response) => { 
+            getPlaylistTracks(props.playlist.id)
+            console.log('removeu musicas', response.data)
+          })
+          .catch((error) => {
+            console.log(error.response);
+        }) 
+
+    }
+
+
 
     return (
         <ContainerMusicas>
@@ -31,14 +105,25 @@ export default function Musicas(props) {
                     <Musica key={musica.id}>
                         <h3>{musica.name} - {musica.artist}</h3>
                         <audio src={musica.url} controls />
-                        <button>X</button>
+                        <button onClick={() => removeTrackFromPlaylist(musica.id)}>X</button>
                     </Musica>)
             })}
             <ContainerInputs>
-                <InputMusica placeholder="artista" />
-                <InputMusica placeholder="musica" />
-                <InputMusica placeholder="url" />
-                <Botao>Adicionar musica</Botao>
+                <InputMusica 
+                placeholder="artista" value={artist}
+                onChange={(e)=> setArtist(e.target.value)}/>
+                
+                <InputMusica 
+                onChange={(e)=> setName(e.target.value)} 
+                placeholder="musica"
+                value={name}  />
+                
+                <InputMusica 
+                value={url}
+                onChange={(e)=> setUrl(e.target.value)} 
+                placeholder="url" />
+                
+                <Botao onClick={()=> addTrackToPlaylist(props.playlist.id)}>Adicionar musica</Botao>
             </ContainerInputs>
         </ContainerMusicas>
     )
