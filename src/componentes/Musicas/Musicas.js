@@ -42,7 +42,7 @@ export default function Musicas(props) {
         axios.get(`https://us-central1-labenu-apis.cloudfunctions.net/labefy/playlists/${playlistId}/tracks`, headers)
         .then((resp) => {
             setMusicas(resp.data.result.tracks)
-            console.log('sucesso musicas', resp.data);
+            console.log('pegou musicas', resp.data);
           })
           .catch((error) => {
             console.log(error.response.data);
